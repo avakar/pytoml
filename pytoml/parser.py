@@ -1,22 +1,27 @@
-import string, re
+import string, re, sys
 
 class TomlError(RuntimeError):
-    def __init__(self, kind, line, col):
-        self.kind = kind
+    def __init__(self, message, line, col, filename):
+        RuntimeError.__init__(self, message, line, col, filename)
+        self.message = message
         self.line = line
         self.col = col
-        RuntimeError.__init__(self, kind)
+        self.filename = filename
 
     def __str__(self):
-        return '%s(%d, %d)' % (self.kind, self.line, self.col)
+        return '{}({}, {}): {}'.format(self.filename, self.line, self.col, self.message)
+
+    def __repr__(self):
+        return 'TomlError({!r}, {!r}, {!r}, {!r})'.format(self.message, self.line, self.col, self.filename)
 
 class _CharSource:
-    def __init__(self, s):
+    def __init__(self, s, filename):
         self._s = s
         self._index = 0
         self._mark = 0
         self._line = 1
         self._col = 1
+        self._filename = filename
         self._update_cur()
 
     def __bool__(self):
@@ -56,8 +61,8 @@ class _CharSource:
             text = tok
         return type, text, pos
 
-    def error(self, kind):
-        raise TomlError(kind, self._line, self._col)
+    def error(self, message):
+        raise TomlError(message, self._line, self._col, self._filename)
 
     def _update_cur(self):
         self.tail = self._s[self._index:]
@@ -66,8 +71,13 @@ class _CharSource:
         else:
             self.cur = None
 
-def lex(s):
-    src = _CharSource(s.replace('\r\n', '\n'))
+if sys.version_info[0] == 2:
+    _chr = unichr
+else:
+    _chr = chr
+
+def _lex(s, filename):
+    src = _CharSource(s.replace('\r\n', '\n'), filename)
     def is_id(ch):
         return ch is not None and (ch.isalnum() or ch in '-_')
 
@@ -79,12 +89,12 @@ def lex(s):
         if src.cur == 'u':
             if len(src) < 5 or any(ch not in string.hexdigits for ch in src[1:5]):
                 src.error('invalid_escape_sequence')
-            res = unichr(int(src[1:5], 16))
+            res = _chr(int(src[1:5], 16))
             src.next(5)
         elif src.cur == 'U':
             if len(src) < 9 or any(ch not in string.hexdigits for ch in src[1:9]):
                 src.error('invalid_escape_sequence')
-            res = unichr(int(src[1:9], 16))
+            res = _chr(int(src[1:9], 16))
             src.next(9)
         elif src.cur == '\n':
             while src and src.cur in ' \n\t':
@@ -222,8 +232,9 @@ def lex(s):
     yield src.commit('eof', '')
 
 class _TokSource:
-    def __init__(self, s):
-        self._lex = iter(lex(s))
+    def __init__(self, s, filename):
+        self._filename = filename
+        self._lex = iter(_lex(s, filename))
         self.pos = None
         self.next()
 
@@ -246,8 +257,12 @@ class _TokSource:
         while self.consume('\n'):
             pass
 
-    def error(self, kind):
-        raise TomlError(kind, self.pos[0][0], self.pos[0][1])
+    def expect(self, kind, error_text):
+        if not self.consume(kind):
+            self.error(error_text)
+
+    def error(self, message):
+        raise TomlError(message, self.pos[0][0], self.pos[0][1], self._filename)
 
 def _translate_literal(type, text):
     if type == 'bool':
@@ -262,13 +277,15 @@ def _translate_literal(type, text):
         return text
 
 def load(fin, translate_literal=_translate_literal, translate_array=id):
-    return loads(fin.read(), translate_literal=translate_literal, translate_array=translate_array)
+    return loads(fin.read(),
+        translate_literal=translate_literal, translate_array=translate_array,
+        filename=fin.name)
 
-def loads(s, translate_literal=_translate_literal, translate_array=id):
-    if isinstance(s, str):
+def loads(s, translate_literal=_translate_literal, translate_array=id, filename='<string>'):
+    if isinstance(s, bytes):
         s = s.decode('utf-8')
 
-    toks = _TokSource(s)
+    toks = _TokSource(s, filename)
 
     def read_value():
         while True:
@@ -302,8 +319,7 @@ def loads(s, translate_literal=_translate_literal, translate_array=id):
                         res.append(val)
                         toks.consume_nls()
                     else:
-                        if not toks.consume(']'):
-                            toks.error('expected_right_brace')
+                        toks.expect(']', 'expected_right_brace')
                 return 'array', translate_array(res)
             elif toks.consume('{'):
                 res = {}
@@ -312,14 +328,12 @@ def loads(s, translate_literal=_translate_literal, translate_array=id):
                     toks.next()
                     if k in res:
                         toks.error('duplicate_key')
-                    if not toks.consume('='):
-                        toks.error('expected_equals')
+                    toks.expect('=', 'expected_equals')
                     type, v = read_value()
                     res[k] = v
                     if not toks.consume(','):
                         break
-                if not toks.consume('}'):
-                    toks.error('expected_closing_brace')
+                toks.expect('}', 'expected_closing_brace')
                 return 'table', res
             else:
                 toks.error('unexpected_token')
@@ -332,12 +346,12 @@ def loads(s, translate_literal=_translate_literal, translate_array=id):
         if toks.tok in ('id', 'str'):
             k = toks.text
             toks.next()
-            if not toks.consume('='):
-                toks.error('expected_equals')
+            toks.expect('=', 'expected_equals')
             type, v = read_value()
             if k in scope:
                 toks.error('duplicate_keys')
             scope[k] = v
+            toks.expect('\n', 'expected_eol')
         elif toks.consume('\n'):
             pass
         elif toks.consume('['):
@@ -355,8 +369,7 @@ def loads(s, translate_literal=_translate_literal, translate_array=id):
                 toks.next()
             if not toks.consume(']') or (is_table_array and not toks.consume_adjacent(']')):
                 toks.error('malformed_table_name')
-            if not toks.consume('\n'):
-                toks.error('garbage_after_table_name')
+            toks.expect('\n', 'expected_eol')
 
             cur = tables
             for name in path[:-1]:
@@ -389,9 +402,10 @@ def loads(s, translate_literal=_translate_literal, translate_array=id):
     def merge_tables(scope, tables):
         if scope is None:
             scope = {}
-        for k, v in tables.iteritems():
+        for k in tables:
             if k in scope:
                 toks.error('key_table_conflict')
+            v = tables[k]
             if isinstance(v, list):
                 scope[k] = [merge_tables(sc, tbl) for sc, tbl in v]
             else:
@@ -399,8 +413,3 @@ def loads(s, translate_literal=_translate_literal, translate_array=id):
         return scope
 
     return merge_tables(root, tables)
-
-if __name__ == '__main__':
-    import sys, json
-    t = sys.stdin.read()
-    print json.dumps(loads(t), indent=4)
