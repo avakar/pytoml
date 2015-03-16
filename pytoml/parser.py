@@ -1,18 +1,5 @@
 import string, re, sys
-
-class TomlError(RuntimeError):
-    def __init__(self, message, line, col, filename):
-        RuntimeError.__init__(self, message, line, col, filename)
-        self.message = message
-        self.line = line
-        self.col = col
-        self.filename = filename
-
-    def __str__(self):
-        return '{}({}, {}): {}'.format(self.filename, self.line, self.col, self.message)
-
-    def __repr__(self):
-        return 'TomlError({!r}, {!r}, {!r}, {!r})'.format(self.message, self.line, self.col, self.filename)
+from .core import TomlError
 
 class _CharSource:
     def __init__(self, s, filename):
@@ -276,12 +263,15 @@ def _translate_literal(type, text):
     elif type == 'datetime':
         return text
 
-def load(fin, translate_literal=_translate_literal, translate_array=id):
+def _translate_array(a):
+    return a
+
+def load(fin, translate_literal=_translate_literal, translate_array=_translate_array):
     return loads(fin.read(),
         translate_literal=translate_literal, translate_array=translate_array,
         filename=fin.name)
 
-def loads(s, translate_literal=_translate_literal, translate_array=id, filename='<string>'):
+def loads(s, translate_literal=_translate_literal, translate_array=_translate_array, filename='<string>'):
     if isinstance(s, bytes):
         s = s.decode('utf-8')
 
