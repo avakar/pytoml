@@ -19,9 +19,18 @@ def _main():
 
             try:
                 with open(os.path.join(top, fname), 'rb') as fin:
-                    parsed = toml.load(fin, _testbench_literal, _testbench_array)
+                    parsed = toml.load(fin)
             except toml.TomlError:
                 parsed = None
+            else:
+                dumped = toml.dumps(parsed)
+                parsed2 = toml.loads(dumped)
+                if parsed != parsed2:
+                    failed.append(fname)
+                    continue
+
+                with open(os.path.join(top, fname), 'rb') as fin:
+                    parsed = toml.load(fin, _testbench_literal, _testbench_array)
 
             try:
                 with io.open(os.path.join(top, fname[:-5] + '.json'), 'rt', encoding='utf-8') as fin:

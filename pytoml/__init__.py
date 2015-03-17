@@ -1,1 +1,3 @@
-from .parser import TomlError, load, loads
+from .core import TomlError
+from .parser import load, loads
+from .writer import dump, dumps
