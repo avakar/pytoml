@@ -1,4 +1,4 @@
-import string, re, sys
+import string, re, sys, datetime
 from .core import TomlError
 
 class _CharSource:
@@ -63,6 +63,8 @@ if sys.version_info[0] == 2:
 else:
     _chr = chr
 
+_datetime_re = re.compile(r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(?:Z|([+-]\d{2}):(\d{2}))')
+
 def _lex(s, filename):
     src = _CharSource(s.replace('\r\n', '\n'), filename)
     def is_id(ch):
@@ -94,9 +96,8 @@ def _lex(s, filename):
             src.error('invalid_escape_sequence')
         return res
 
-    datetime_re = re.compile(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})')
     def consume_datetime():
-        m = datetime_re.match(src.tail)
+        m = _datetime_re.match(src.tail)
         if not m:
             return False
         src.next(len(m.group(0)))
@@ -251,6 +252,36 @@ class _TokSource:
     def error(self, message):
         raise TomlError(message, self.pos[0][0], self.pos[0][1], self._filename)
 
+def _translate_datetime(s):
+    match = _datetime_re.match(s)
+    re.compile(r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(?:Z|([+-]\d{2}):(\d{2}))')
+
+    y = int(match.group(1))
+    m = int(match.group(2))
+    d = int(match.group(3))
+    H = int(match.group(4))
+    M = int(match.group(5))
+    S = int(match.group(6))
+
+    if match.group(7) is not None:
+        micro = float(match.group(7))
+    else:
+        micro = 0
+
+    if match.group(8) is not None:
+        tzh = int(match.group(8))
+        tzm = int(match.group(9))
+        if tzh < 0:
+            tzm = -tzm
+        offs = tzh * 60 + tzm
+    else:
+        offs = 0
+
+    dt = datetime.datetime(y, m, d, H, M, S, int(micro * 1000000),
+        _TimeZone(datetime.timedelta(0, offs*60)))
+
+    return dt
+
 def _translate_literal(type, text):
     if type == 'bool':
         return text == 'true'
@@ -261,7 +292,7 @@ def _translate_literal(type, text):
     elif type == 'str':
         return text
     elif type == 'datetime':
-        return text
+        return _translate_datetime(text)
 
 def _translate_array(a):
     return a
@@ -403,3 +434,24 @@ def loads(s, translate_literal=_translate_literal, translate_array=_translate_ar
         return scope
 
     return merge_tables(root, tables)
+
+class _TimeZone(datetime.tzinfo):
+    def __init__(self, offset):
+        self._offset = offset
+
+    def utcoffset(self, dt):
+        return self._offset
+
+    def dst(self, dt):
+        return None
+
+    def tzname(self, dt):
+        m = self._offset.total_seconds() // 60
+        if m < 0:
+            res = '-'
+            m = -m
+        else:
+            res = '+'
+        h = m // 60
+        m = m - h * 60
+        return '{}{:.02}{:.02}'.format(res, h, m)
