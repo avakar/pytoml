@@ -370,7 +370,7 @@ def loads(s, translate_literal=_translate_literal, translate_array=_translate_ar
             toks.expect('=', 'expected_equals')
             type, v = read_value()
             if k in scope:
-                toks.error('duplicate_keys')
+                toks.error('duplicate_keys. Key "{}" was used more than once.'.format(k))
             scope[k] = v
             toks.expect('\n', 'expected_eol')
         elif toks.consume('\n'):
