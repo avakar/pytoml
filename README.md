@@ -5,7 +5,7 @@ The library currently supports [version 0.4.0][2] of the specs and runs with Pyt
 
 Install:
 
-    easy_install pytoml
+    pip install pytoml
 
 The interface is the same as for the standard `json` package.
 
