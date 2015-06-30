@@ -1,12 +1,15 @@
-import os, json, sys, io
+import os, json, sys, io, traceback
 import pytoml as toml
 
-def _testbench_literal(type, text):
-    _type_table = {'str': 'string', 'int': 'integer'}
+def _testbench_literal(type, text, value):
+    if type == 'table':
+        return value
+    if type == 'array':
+        return { 'type': 'array', 'value': value }
+    if type == 'str':
+        return { 'type': 'string', 'value': value }
+    _type_table = {'int': 'integer'}
     return {'type': _type_table.get(type, type), 'value': text}
-
-def _testbench_array(values):
-    return {'type': 'array', 'value': values}
 
 def _main():
     succeeded = []
@@ -17,20 +20,25 @@ def _main():
             if not fname.endswith('.toml'):
                 continue
 
+            if sys.argv[1:] and not any(arg in fname for arg in sys.argv[1:]):
+                continue
+
+            parse_error = None
             try:
                 with open(os.path.join(top, fname), 'rb') as fin:
                     parsed = toml.load(fin)
             except toml.TomlError:
                 parsed = None
+                parse_error = sys.exc_info()
             else:
                 dumped = toml.dumps(parsed)
                 parsed2 = toml.loads(dumped)
                 if parsed != parsed2:
-                    failed.append(fname)
+                    failed.append((fname, None))
                     continue
 
                 with open(os.path.join(top, fname), 'rb') as fin:
-                    parsed = toml.load(fin, _testbench_literal, _testbench_array)
+                    parsed = toml.load(fin, translate=_testbench_literal)
 
             try:
                 with io.open(os.path.join(top, fname[:-5] + '.json'), 'rt', encoding='utf-8') as fin:
@@ -39,15 +47,16 @@ def _main():
                 bench = None
 
             if parsed != bench:
-                failed.append(fname)
+                failed.append((fname, parsed, bench, parse_error))
             else:
                 succeeded.append(fname)
 
-    for f in failed:
-        print('failed: {}'.format(f))
+    for f, parsed, bench, e in failed:
+        print('failed: {}\n{}\n{}'.format(f, json.dumps(parsed, indent=4), json.dumps(bench, indent=4)))
+        if e:
+            traceback.print_exception(*e)
     print('succeeded: {}'.format(len(succeeded)))
     return 1 if failed else 0
 
 if __name__ == '__main__':
     sys.exit(_main())
-

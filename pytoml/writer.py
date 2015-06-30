@@ -72,7 +72,7 @@ def _format_value(v):
     elif isinstance(v, list):
         return _format_list(v)
     else:
-        raise RuntimeError('XXX')
+        raise RuntimeError(v)
 
 def dump(fout, obj):
     tables = [((), obj, False)]
