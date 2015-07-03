@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/avakar/pytoml.svg?branch=master)](https://travis-ci.org/avakar/pytoml)
+
 # pytoml
 
 This project aims at being a specs-conforming and strict parser and writer for [TOML][1] files.
