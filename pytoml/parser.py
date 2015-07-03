@@ -20,10 +20,7 @@ def loads(s, filename='<string>', translate=lambda t, x, v: v):
     scope = root
 
     src = _Source(s, filename=filename)
-    try:
-        ast = _p_toml(src)
-    except TomlError:
-        src.raise_latest()
+    ast = _p_toml(src)
 
     def error(msg):
         raise TomlError(msg, pos[0], pos[1], filename)
@@ -95,11 +92,7 @@ class _Source:
         self._pos = (1, 1)
         self._last = None
         self._filename = filename
-        self._latest_error = None
         self.backtrack_stack = []
-
-    def raise_latest(self):
-        raise self._latest_error[0], self._latest_error[1], self._latest_error[2]
 
     def last(self):
         return self._last
@@ -161,12 +154,7 @@ class _Source:
             self.backtrack_stack.pop()
         else:
             self.s, self._pos = self.backtrack_stack.pop()
-        if type == TomlError:
-            if self._latest_error is None or self._latest_error[1][1:3] < value.args[1:3]:
-                self._latest_error = (type, value, traceback)
-            return True
-        else:
-            return False
+        return type == TomlError
 
     def commit(self):
         self.backtrack_stack[-1] = (self.s, self._pos)
@@ -194,7 +182,7 @@ def _p_ws(s):
 _escapes = { 'b': '\b', 'n': '\n', 'r': '\r', 't': '\t', '"': '"', '\'': '\'',
     '\\': '\\', '/': '/', 'f': '\f' }
 
-_basicstr_re = re.compile(ur'[^"\\\000-\037]*')
+_basicstr_re = re.compile(r'[^"\\\000-\037]*')
 _short_uni_re = re.compile(r'u([0-9a-fA-F]{4})')
 _long_uni_re = re.compile(r'U([0-9a-fA-F]{8})')
 _escapes_re = re.compile('[bnrt"\'\\\\/f]')
@@ -208,7 +196,7 @@ def _p_basicstr_content(s, content=_basicstr_re):
         if s.consume_re(_newline_esc_re):
             pass
         elif s.consume_re(_short_uni_re) or s.consume_re(_long_uni_re):
-            res.append(unichr(int(s.last().group(1), 16)))
+            res.append(_chr(int(s.last().group(1), 16)))
         else:
             s.expect_re(_escapes_re)
             res.append(_escapes[s.last().group(0)])
@@ -226,9 +214,9 @@ def _p_key(s):
 _float_re = re.compile(r'[+-]?(?:0|[1-9](?:_?\d)*)(?:\.(?:_?\d)+)?(?:[eE][+-]?(?:0|[1-9](?:_?\d)*))?')
 _datetime_re = re.compile(r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(?:Z|([+-]\d{2}):(\d{2}))')
 
-_basicstr_ml_re = re.compile(ur'(?:(?:|"|"")[^"\\\000-\011\013-\037])*')
-_litstr_re = re.compile(ur"[^'\000-\037]*")
-_litstr_ml_re = re.compile(ur"(?:(?:|'|'')(?:[^'\000-\011\013-\037]))*")
+_basicstr_ml_re = re.compile(r'(?:(?:|"|"")[^"\\\000-\011\013-\037])*')
+_litstr_re = re.compile(r"[^'\000-\037]*")
+_litstr_ml_re = re.compile(r"(?:(?:|'|'')(?:[^'\000-\011\013-\037]))*")
 def _p_value(s):
     pos = s.pos()
 
