@@ -264,10 +264,11 @@ def _p_value(s):
 
     if s.consume_re(_float_re):
         m = s.last().group(0)
+        r = m.replace('_','')
         if '.' in m or 'e' in m or 'E' in m:
-            return 'float', m, float(m), pos
+            return 'float', m, float(r), pos
         else:
-            return 'int', m, int(m, 10), pos
+            return 'int', m, int(r, 10), pos
 
     if s.consume('['):
         items = []
