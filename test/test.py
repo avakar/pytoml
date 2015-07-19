@@ -1,4 +1,4 @@
-import os, json, sys, io, traceback
+import os, json, sys, io, traceback, argparse
 import pytoml as toml
 
 def _testbench_literal(type, text, value):
@@ -12,51 +12,63 @@ def _testbench_literal(type, text, value):
     return {'type': _type_table.get(type, type), 'value': text}
 
 def _main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-d', '--dir', action='append')
+    ap.add_argument('testcase', nargs='*')
+    args = ap.parse_args()
+
+    if not args.dir:
+        args.dir = [os.path.join(os.path.split(__file__)[0], 'toml-test/tests')]
+
     succeeded = []
     failed = []
 
-    for top, dirnames, fnames in os.walk('./toml-test/tests'):
-        for fname in fnames:
-            if not fname.endswith('.toml'):
-                continue
-
-            if sys.argv[1:] and not any(arg in fname for arg in sys.argv[1:]):
-                continue
-
-            parse_error = None
-            try:
-                with open(os.path.join(top, fname), 'rb') as fin:
-                    parsed = toml.load(fin)
-            except toml.TomlError:
-                parsed = None
-                parse_error = sys.exc_info()
-            else:
-                dumped = toml.dumps(parsed)
-                parsed2 = toml.loads(dumped)
-                if parsed != parsed2:
-                    failed.append((fname, None))
+    for path in args.dir:
+        if not os.path.isdir(path):
+            print('error: not a dir: {}'.format(path))
+            return 2
+        for top, dirnames, fnames in os.walk(path):
+            for fname in fnames:
+                if not fname.endswith('.toml'):
                     continue
 
-                with open(os.path.join(top, fname), 'rb') as fin:
-                    parsed = toml.load(fin, translate=_testbench_literal)
+                if args.testcase and not any(arg in fname for arg in args.testcase):
+                    continue
 
-            try:
-                with io.open(os.path.join(top, fname[:-5] + '.json'), 'rt', encoding='utf-8') as fin:
-                    bench = json.load(fin)
-            except IOError:
-                bench = None
+                parse_error = None
+                try:
+                    with open(os.path.join(top, fname), 'rb') as fin:
+                        parsed = toml.load(fin)
+                except toml.TomlError:
+                    parsed = None
+                    parse_error = sys.exc_info()
+                else:
+                    dumped = toml.dumps(parsed)
+                    parsed2 = toml.loads(dumped)
+                    if parsed != parsed2:
+                        failed.append((fname, None))
+                        continue
 
-            if parsed != bench:
-                failed.append((fname, parsed, bench, parse_error))
-            else:
-                succeeded.append(fname)
+                    with open(os.path.join(top, fname), 'rb') as fin:
+                        parsed = toml.load(fin, translate=_testbench_literal)
+
+                try:
+                    with io.open(os.path.join(top, fname[:-5] + '.json'), 'rt', encoding='utf-8') as fin:
+                        bench = json.load(fin)
+                except IOError:
+                    bench = None
+
+                if parsed != bench:
+                    failed.append((fname, parsed, bench, parse_error))
+                else:
+                    succeeded.append(fname)
 
     for f, parsed, bench, e in failed:
         print('failed: {}\n{}\n{}'.format(f, json.dumps(parsed, indent=4), json.dumps(bench, indent=4)))
         if e:
             traceback.print_exception(*e)
     print('succeeded: {}'.format(len(succeeded)))
-    return 1 if failed else 0
+    return 1 if failed or not succeeded else 0
 
 if __name__ == '__main__':
     sys.exit(_main())
