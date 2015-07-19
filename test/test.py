@@ -6,10 +6,29 @@ def _testbench_literal(type, text, value):
         return value
     if type == 'array':
         return { 'type': 'array', 'value': value }
+    if type == 'datetime':
+        offs = value.tzinfo.utcoffset(value).total_seconds() // 60
+        offs = 'Z' if offs == 0 else '{}{}:{}'.format('-' if offs < 0 else '-', abs(offs) // 60, abs(offs) % 60)
+        v = '{:04}-{:02}-{:02}T{:02}:{:02}:{:02}{}'.format(value.year, value.month, value.day, value.hour, value.minute, value.second, offs)
+        return { 'type': 'datetime', 'value': v }
+    if type == 'bool':
+        return { 'type': 'bool', 'value': 'true' if value else 'false' }
+    if type == 'float':
+        return { 'type': 'float', 'value': value }
     if type == 'str':
         return { 'type': 'string', 'value': value }
-    _type_table = {'int': 'integer'}
-    return {'type': _type_table.get(type, type), 'value': text}
+    if type == 'int':
+        return { 'type': 'integer', 'value': str(value) }
+
+def adjust_bench(v):
+    if isinstance(v, dict):
+        if v.get('type') == 'float':
+            v['value'] = float(v['value'])
+            return v
+        return { k: adjust_bench(v) for k, v in v.iteritems() }
+    if isinstance(v, list):
+        return [adjust_bench(v) for v in v]
+    return v
 
 def _main():
     ap = argparse.ArgumentParser()
@@ -58,7 +77,7 @@ def _main():
                 except IOError:
                     bench = None
 
-                if parsed != bench:
+                if parsed != adjust_bench(bench):
                     failed.append((fname, parsed, bench, parse_error))
                 else:
                     succeeded.append(fname)
