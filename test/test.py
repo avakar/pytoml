@@ -25,7 +25,7 @@ def adjust_bench(v):
         if v.get('type') == 'float':
             v['value'] = float(v['value'])
             return v
-        return { k: adjust_bench(v) for k, v in v.iteritems() }
+        return { k: adjust_bench(v[k]) for k in v }
     if isinstance(v, list):
         return [adjust_bench(v) for v in v]
     return v
