@@ -15,7 +15,7 @@ def _main():
     succeeded = []
     failed = []
 
-    for top, dirnames, fnames in os.walk('.'):
+    for top, dirnames, fnames in os.walk('./toml-test/tests'):
         for fname in fnames:
             if not fname.endswith('.toml'):
                 continue

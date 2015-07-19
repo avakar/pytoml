@@ -1,0 +1,3 @@
+[submodule "test/toml-test"]
+	path = test/toml-test
+	url = https://github.com/avakar/toml-test.git
