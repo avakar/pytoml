@@ -1,3 +1,6 @@
 build/
 dist/
 pytoml.egg-info/
+venv/
+.idea/
+__pycache__/

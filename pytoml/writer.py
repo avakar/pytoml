@@ -5,16 +5,20 @@ if sys.version_info[0] == 3:
     long = int
     unicode = str
 
+
 def dumps(obj):
     fout = io.StringIO()
     dump(fout, obj)
     return fout.getvalue()
 
-_escapes = { '\n': 'n', '\r': 'r', '\\': '\\', '\t': 't', '\b': 'b', '\f': 'f', '"': '"' }
+
+_escapes = {'\n': 'n', '\r': 'r', '\\': '\\', '\t': 't', '\b': 'b', '\f': 'f', '"': '"'}
+
 
 def _escape_string(s):
     res = []
     start = 0
+
     def flush():
         if start != i:
             res.append(s[start:i])
@@ -34,13 +38,16 @@ def _escape_string(s):
     flush()
     return '"' + ''.join(res) + '"'
 
+
 def _escape_id(s):
     if any(not c.isalnum() and c not in '-_' for c in s):
         return _escape_string(s)
     return s
 
+
 def _format_list(v):
     return '[{}]'.format(', '.join(_format_value(obj) for obj in v))
+
 
 def _format_value(v):
     if isinstance(v, bool):
@@ -74,6 +81,7 @@ def _format_value(v):
     else:
         raise RuntimeError(v)
 
+
 def dump(fout, obj):
     tables = [((), obj, False)]
 
@@ -92,6 +100,10 @@ def dump(fout, obj):
                 tables.append((name + (k,), v, False))
             elif isinstance(v, list) and v and all(isinstance(o, dict) for o in v):
                 tables.extend((name + (k,), d, True) for d in reversed(v))
+            elif v is None:
+                # based on mojombo's comment: https://github.com/toml-lang/toml/issues/146#issuecomment-25019344
+                fout.write(
+                    '#{} = null  # To use: uncomment and replace null with value\n'.format(_escape_id(k)))
             else:
                 fout.write('{} = {}\n'.format(_escape_id(k), _format_value(v)))
 
