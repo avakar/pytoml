@@ -27,6 +27,16 @@ Use `dump` or `dumps` to serialize a dict into TOML.
 
     >>> print toml.dumps(obj)
     a = 1
+    
+## tests
+
+To run the tests update the `toml-test` submodule:
+
+    $ git submodule update --init --recursive
+    
+Then run the tests:
+
+    $ python test/test.py
 
   [1]: https://github.com/toml-lang/toml
   [2]: https://github.com/toml-lang/toml/blob/master/versions/en/toml-v0.4.0.md
