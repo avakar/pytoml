@@ -100,6 +100,9 @@ def dump(fout, obj):
                 tables.append((name + (k,), v, False))
             elif isinstance(v, list) and v and all(isinstance(o, dict) for o in v):
                 tables.extend((name + (k,), d, True) for d in reversed(v))
+            elif v is None:
+                fout.write(
+                    '#{} = VALUE  # To use: uncomment and replace VALUE with your own value.\n'.format(_escape_id(k)))
             else:
                 fout.write('{} = {}\n'.format(_escape_id(k), _format_value(v)))
 
