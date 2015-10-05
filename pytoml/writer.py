@@ -101,8 +101,9 @@ def dump(fout, obj):
             elif isinstance(v, list) and v and all(isinstance(o, dict) for o in v):
                 tables.extend((name + (k,), d, True) for d in reversed(v))
             elif v is None:
+                # based on mojombo's comment: https://github.com/toml-lang/toml/issues/146#issuecomment-25019344
                 fout.write(
-                    '#{} = VALUE  # To use: uncomment and replace VALUE with your own value.\n'.format(_escape_id(k)))
+                    '#{} = null  # To use: uncomment and replace null with value\n'.format(_escape_id(k)))
             else:
                 fout.write('{} = {}\n'.format(_escape_id(k), _format_value(v)))
 
