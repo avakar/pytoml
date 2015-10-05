@@ -5,16 +5,20 @@ if sys.version_info[0] == 3:
     long = int
     unicode = str
 
+
 def dumps(obj):
     fout = io.StringIO()
     dump(fout, obj)
     return fout.getvalue()
 
-_escapes = { '\n': 'n', '\r': 'r', '\\': '\\', '\t': 't', '\b': 'b', '\f': 'f', '"': '"' }
+
+_escapes = {'\n': 'n', '\r': 'r', '\\': '\\', '\t': 't', '\b': 'b', '\f': 'f', '"': '"'}
+
 
 def _escape_string(s):
     res = []
     start = 0
+
     def flush():
         if start != i:
             res.append(s[start:i])
@@ -34,13 +38,16 @@ def _escape_string(s):
     flush()
     return '"' + ''.join(res) + '"'
 
+
 def _escape_id(s):
     if any(not c.isalnum() and c not in '-_' for c in s):
         return _escape_string(s)
     return s
 
+
 def _format_list(v):
     return '[{}]'.format(', '.join(_format_value(obj) for obj in v))
+
 
 def _format_value(v):
     if isinstance(v, bool):
@@ -73,6 +80,7 @@ def _format_value(v):
         return _format_list(v)
     else:
         raise RuntimeError(v)
+
 
 def dump(fout, obj):
     tables = [((), obj, False)]
