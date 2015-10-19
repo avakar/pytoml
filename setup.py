@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='pytoml',
-    version='0.1.6',
+    version='0.1.7',
 
     description='A parser for TOML-0.4.0',
     author='Martin Vejnár',

@@ -6,9 +6,9 @@ if sys.version_info[0] == 3:
     unicode = str
 
 
-def dumps(obj):
+def dumps(obj, sort_keys=False):
     fout = io.StringIO()
-    dump(fout, obj)
+    dump(fout, obj, sort_keys=sort_keys)
     return fout.getvalue()
 
 
@@ -82,10 +82,13 @@ def _format_value(v):
         raise RuntimeError(v)
 
 
-def dump(fout, obj):
+def dump(fout, obj, sort_keys=False):
     tables = [((), obj, False)]
 
     while tables:
+        if sort_keys:
+            tables.sort(key=lambda tup: tup[0], reverse=True)
+
         name, table, is_array = tables.pop()
         if name:
             section_name = '.'.join(_escape_id(c) for c in name)
@@ -94,7 +97,8 @@ def dump(fout, obj):
             else:
                 fout.write('[{}]\n'.format(section_name))
 
-        for k in table:
+        table_keys = sorted(table.keys()) if sort_keys else table.keys()
+        for k in table_keys:
             v = table[k]
             if isinstance(v, dict):
                 tables.append((name + (k,), v, False))
