@@ -34,14 +34,14 @@ def loads(s, filename='<string>', translate=lambda t, x, v: v):
                 error('array-type-mismatch')
             value = [process_value(item) for item in value]
         elif kind == 'table':
-            value = { k: process_value(value[k]) for k in value }
+            value = dict([(k, process_value(value[k])) for k in value])
         return translate(kind, text, value)
 
     for kind, value, pos in ast:
         if kind == 'kv':
             k, v = value
             if k in scope:
-                error('duplicate_keys. Key "{}" was used more than once.'.format(k))
+                error('duplicate_keys. Key "{0}" was used more than once.'.format(k))
             scope[k] = process_value(v)
         else:
             is_table_array = (kind == 'table_array')

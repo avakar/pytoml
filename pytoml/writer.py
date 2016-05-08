@@ -46,8 +46,14 @@ def _escape_id(s):
 
 
 def _format_list(v):
-    return '[{}]'.format(', '.join(_format_value(obj) for obj in v))
+    return '[{0}]'.format(', '.join(_format_value(obj) for obj in v))
 
+# Formula from:
+#   https://docs.python.org/2/library/datetime.html#datetime.timedelta.total_seconds
+# Once support for py26 is dropped, this can be replaced by td.total_seconds()
+def _total_seconds(td):
+    return ((td.microseconds
+             + (td.seconds + td.days * 24 * 3600) * 10**6) / 10.0**6)
 
 def _format_value(v):
     if isinstance(v, bool):
@@ -55,12 +61,12 @@ def _format_value(v):
     if isinstance(v, int) or isinstance(v, long):
         return unicode(v)
     if isinstance(v, float):
-        return '{:.17f}'.format(v)
+        return '{0:.17f}'.format(v)
     elif isinstance(v, unicode) or isinstance(v, bytes):
         return _escape_string(v)
     elif isinstance(v, datetime.datetime):
         offs = v.utcoffset()
-        offs = offs.total_seconds() // 60 if offs is not None else 0
+        offs = _total_seconds(offs) // 60 if offs is not None else 0
 
         if offs == 0:
             suffix = 'Z'
@@ -70,7 +76,7 @@ def _format_value(v):
             else:
                 suffix = '-'
                 offs = -offs
-            suffix = '{}{:.02}{:.02}'.format(suffix, offs // 60, offs % 60)
+            suffix = '{0}{1:.02}{2:.02}'.format(suffix, offs // 60, offs % 60)
 
         if v.microsecond:
             return v.strftime('%Y-%m-%dT%H:%M:%S.%f') + suffix
@@ -92,9 +98,9 @@ def dump(fout, obj, sort_keys=False):
         if name:
             section_name = '.'.join(_escape_id(c) for c in name)
             if is_array:
-                fout.write('[[{}]]\n'.format(section_name))
+                fout.write('[[{0}]]\n'.format(section_name))
             else:
-                fout.write('[{}]\n'.format(section_name))
+                fout.write('[{0}]\n'.format(section_name))
 
         table_keys = sorted(table.keys()) if sort_keys else table.keys()
         for k in table_keys:
@@ -108,7 +114,7 @@ def dump(fout, obj, sort_keys=False):
                 fout.write(
                     '#{} = null  # To use: uncomment and replace null with value\n'.format(_escape_id(k)))
             else:
-                fout.write('{} = {}\n'.format(_escape_id(k), _format_value(v)))
+                fout.write('{0} = {1}\n'.format(_escape_id(k), _format_value(v)))
 
         if tables:
             fout.write('\n')

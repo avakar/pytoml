@@ -1,15 +1,22 @@
 import os, json, sys, io, traceback, argparse
 import pytoml as toml
 
+# Formula from:
+#   https://docs.python.org/2/library/datetime.html#datetime.timedelta.total_seconds
+# Once support for py26 is dropped, this can be replaced by td.total_seconds()
+def _total_seconds(td):
+    return ((td.microseconds
+             + (td.seconds + td.days * 24 * 3600) * 10**6) / 10.0**6)
+
 def _testbench_literal(type, text, value):
     if type == 'table':
         return value
     if type == 'array':
         return { 'type': 'array', 'value': value }
     if type == 'datetime':
-        offs = value.tzinfo.utcoffset(value).total_seconds() // 60
+        offs = _total_seconds(value.tzinfo.utcoffset(value)) // 60
         offs = 'Z' if offs == 0 else '{}{}:{}'.format('-' if offs < 0 else '-', abs(offs) // 60, abs(offs) % 60)
-        v = '{:04}-{:02}-{:02}T{:02}:{:02}:{:02}{}'.format(value.year, value.month, value.day, value.hour, value.minute, value.second, offs)
+        v = '{0:04}-{1:02}-{2:02}T{3:02}:{4:02}:{5:02}{6}'.format(value.year, value.month, value.day, value.hour, value.minute, value.second, offs)
         return { 'type': 'datetime', 'value': v }
     if type == 'bool':
         return { 'type': 'bool', 'value': 'true' if value else 'false' }
@@ -25,7 +32,7 @@ def adjust_bench(v):
         if v.get('type') == 'float':
             v['value'] = float(v['value'])
             return v
-        return { k: adjust_bench(v[k]) for k in v }
+        return dict([(k, adjust_bench(v[k])) for k in v])
     if isinstance(v, list):
         return [adjust_bench(v) for v in v]
     return v
@@ -44,7 +51,7 @@ def _main():
 
     for path in args.dir:
         if not os.path.isdir(path):
-            print('error: not a dir: {}'.format(path))
+            print('error: not a dir: {0}'.format(path))
             return 2
         for top, dirnames, fnames in os.walk(path):
             for fname in fnames:
@@ -86,7 +93,7 @@ def _main():
         print('failed: {}\n{}\n{}'.format(f, json.dumps(parsed, indent=4), json.dumps(bench, indent=4)))
         if e:
             traceback.print_exception(*e)
-    print('succeeded: {}'.format(len(succeeded)))
+    print('succeeded: {0}'.format(len(succeeded)))
     return 1 if failed or not succeeded else 0
 
 if __name__ == '__main__':
