@@ -171,7 +171,7 @@ class _Source:
         else:
             self._pos = (self._pos[0] + s.count('\n'), len(s) - suffix_pos)
 
-_ews_re = re.compile(r'(?:[ \t]|#[^\n]*\n|\n)*')
+_ews_re = re.compile(r'(?:[ \t]|#[^\n]*\n|#[^\n]*\Z|\n)*')
 def _p_ews(s):
     s.expect_re(_ews_re)
 
