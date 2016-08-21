@@ -92,8 +92,6 @@ def dump(fout, obj, sort_keys=False):
     tables = [((), obj, False)]
 
     while tables:
-        if sort_keys:
-            tables.sort(key=lambda tup: tup[0], reverse=True)
         name, table, is_array = tables.pop()
         if name:
             section_name = '.'.join(_escape_id(c) for c in name)
@@ -103,18 +101,21 @@ def dump(fout, obj, sort_keys=False):
                 fout.write('[{0}]\n'.format(section_name))
 
         table_keys = sorted(table.keys()) if sort_keys else table.keys()
+        new_tables = []
         for k in table_keys:
             v = table[k]
             if isinstance(v, dict):
-                tables.append((name + (k,), v, False))
+                new_tables.append((name + (k,), v, False))
             elif isinstance(v, list) and v and all(isinstance(o, dict) for o in v):
-                tables.extend((name + (k,), d, True) for d in reversed(v))
+                new_tables.extend((name + (k,), d, True) for d in v)
             elif v is None:
                 # based on mojombo's comment: https://github.com/toml-lang/toml/issues/146#issuecomment-25019344
                 fout.write(
                     '#{} = null  # To use: uncomment and replace null with value\n'.format(_escape_id(k)))
             else:
                 fout.write('{0} = {1}\n'.format(_escape_id(k), _format_value(v)))
+
+        tables.extend(reversed(new_tables))
 
         if tables:
             fout.write('\n')

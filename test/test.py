@@ -69,10 +69,12 @@ def _main():
                     parsed = None
                     parse_error = sys.exc_info()
                 else:
-                    dumped = toml.dumps(parsed)
+                    dumped = toml.dumps(parsed, sort_keys=False)
+                    dumped_sorted = toml.dumps(parsed, sort_keys=True)
                     parsed2 = toml.loads(dumped)
-                    if parsed != parsed2:
-                        failed.append((fname, parsed, parsed2, None))
+                    parsed2_sorted = toml.loads(dumped_sorted)
+                    if parsed != parsed2 or parsed != parsed2_sorted:
+                        failed.append((fname, parsed, [parsed2, parsed2_sorted], None))
                         continue
 
                     with open(os.path.join(top, fname), 'rb') as fin:
