@@ -91,9 +91,15 @@ def _format_value(v):
 def dump(fout, obj, sort_keys=False):
     tables = [((), obj, False)]
 
+    def table_cmp(a, b):
+        """don't re-order arrays"""
+        if a[2] and b[2]:   # if both are arrays
+            return 0        # don't re-order
+        return cmp(a[0], b[0])
+
     while tables:
         if sort_keys:
-            tables.sort(key=lambda tup: tup[0], reverse=True)
+            tables.sort(cmp=table_cmp, reverse=True)
         name, table, is_array = tables.pop()
         if name:
             section_name = '.'.join(_escape_id(c) for c in name)
@@ -102,7 +108,10 @@ def dump(fout, obj, sort_keys=False):
             else:
                 fout.write('[{0}]\n'.format(section_name))
 
-        table_keys = sorted(table.keys()) if sort_keys else table.keys()
+        if sort_keys and not is_array:
+            table_keys = sorted(table.keys())
+        else:
+            table_keys = table.keys()
         for k in table_keys:
             v = table[k]
             if isinstance(v, dict):

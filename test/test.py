@@ -40,7 +40,9 @@ def adjust_bench(v):
 def _main():
     ap = argparse.ArgumentParser()
     ap.add_argument('-d', '--dir', action='append')
+    ap.add_argument('-s', '--sort-keys', action='store_true')
     ap.add_argument('testcase', nargs='*')
+    ap.set_defaults(sort_keys=False)
     args = ap.parse_args()
 
     if not args.dir:
@@ -69,7 +71,7 @@ def _main():
                     parsed = None
                     parse_error = sys.exc_info()
                 else:
-                    dumped = toml.dumps(parsed)
+                    dumped = toml.dumps(parsed, sort_keys=args.sort_keys)
                     parsed2 = toml.loads(dumped)
                     if parsed != parsed2:
                         failed.append((fname, parsed, parsed2, None))
