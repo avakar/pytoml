@@ -72,7 +72,7 @@ def _main():
                     dumped = toml.dumps(parsed)
                     parsed2 = toml.loads(dumped)
                     if parsed != parsed2:
-                        failed.append((fname, None))
+                        failed.append((fname, parsed, parsed2, None))
                         continue
 
                     with open(os.path.join(top, fname), 'rb') as fin:
@@ -90,7 +90,11 @@ def _main():
                     succeeded.append(fname)
 
     for f, parsed, bench, e in failed:
-        print('failed: {}\n{}\n{}'.format(f, json.dumps(parsed, indent=4), json.dumps(bench, indent=4)))
+        try:
+            print('failed: {}\n{}\n{}'.format(f, json.dumps(parsed, indent=4), json.dumps(bench, indent=4)))
+        except TypeError:
+            print('failed: {}\n{}\n{}'.format(f, parsed, bench))
+
         if e:
             traceback.print_exception(*e)
     print('succeeded: {0}'.format(len(succeeded)))
