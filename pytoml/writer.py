@@ -8,7 +8,7 @@ if sys.version_info[0] == 3:
 
 def dumps(obj, sort_keys=False):
     fout = io.StringIO()
-    dump(fout, obj, sort_keys=sort_keys)
+    dump(obj, fout, sort_keys=sort_keys)
     return fout.getvalue()
 
 
@@ -88,7 +88,7 @@ def _format_value(v):
         raise RuntimeError(v)
 
 
-def dump(fout, obj, sort_keys=False):
+def dump(obj, fout, sort_keys=False):
     tables = [((), obj, False)]
 
     while tables:
