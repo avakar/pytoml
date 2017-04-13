@@ -61,7 +61,7 @@ def _format_value(v):
     if isinstance(v, int) or isinstance(v, long):
         return unicode(v)
     if isinstance(v, float):
-        return '{0:.17f}'.format(v)
+        return repr(v)
     elif isinstance(v, unicode) or isinstance(v, bytes):
         return _escape_string(v)
     elif isinstance(v, datetime.datetime):
