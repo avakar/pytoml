@@ -182,7 +182,8 @@ def _p_ws(s):
 _escapes = { 'b': '\b', 'n': '\n', 'r': '\r', 't': '\t', '"': '"', '\'': '\'',
     '\\': '\\', '/': '/', 'f': '\f' }
 
-_basicstr_re = re.compile(r'[^"\'\\\000-\037]*')
+_basicstr_re = re.compile(r'[^"\\\000-\037]*')
+_literalstr_re = re.compile(r'[^\']*')
 _short_uni_re = re.compile(r'u([0-9a-fA-F]{4})')
 _long_uni_re = re.compile(r'U([0-9a-fA-F]{8})')
 _escapes_re = re.compile('[bnrt"\'\\\\/f]')
@@ -206,9 +207,13 @@ _key_re = re.compile(r'[0-9a-zA-Z-_]+')
 _quotes_re = re.compile(r'[\'"]')
 def _p_key(s):
     with s:
-        s.expect_re(_quotes_re)
-        r = _p_basicstr_content(s, _basicstr_re)
-        s.expect_re(_quotes_re)
+        q = s.expect_re(_quotes_re)
+        if q.group(0) == "'":
+            r = _p_basicstr_content(s, _literalstr_re)
+            s.expect("'")
+        else:
+            r = _p_basicstr_content(s, _basicstr_re)
+            s.expect('"')
         return r
     return s.expect_re(_key_re).group(0)
 
