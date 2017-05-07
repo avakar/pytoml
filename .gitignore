@@ -5,3 +5,4 @@ venv/
 .idea/
 __pycache__/
 .tox/
+*.pyc
