@@ -182,7 +182,7 @@ def _p_ws(s):
 _escapes = { 'b': '\b', 'n': '\n', 'r': '\r', 't': '\t', '"': '"', '\'': '\'',
     '\\': '\\', '/': '/', 'f': '\f' }
 
-_basicstr_re = re.compile(r'[^"\\\000-\037]*')
+_basicstr_re = re.compile(r'[^"\\\000-\010\011-\037]*')
 _short_uni_re = re.compile(r'u([0-9a-fA-F]{4})')
 _long_uni_re = re.compile(r'U([0-9a-fA-F]{8})')
 _escapes_re = re.compile('[bnrt"\'\\\\/f]')
@@ -214,9 +214,9 @@ def _p_key(s):
 _float_re = re.compile(r'[+-]?(?:0|[1-9](?:_?\d)*)(?:\.\d(?:_?\d)*)?(?:[eE][+-]?(?:\d(?:_?\d)*))?')
 _datetime_re = re.compile(r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(?:Z|([+-]\d{2}):(\d{2}))')
 
-_basicstr_ml_re = re.compile(r'(?:(?:|"|"")[^"\\\000-\011\013-\037])*')
+_basicstr_ml_re = re.compile(r'(?:(?:|"|"")[^"\\\000-\010\013-\037])*')
 _litstr_re = re.compile(r"[^'\000-\037]*")
-_litstr_ml_re = re.compile(r"(?:(?:|'|'')(?:[^'\000-\011\013-\037]))*")
+_litstr_ml_re = re.compile(r"(?:(?:|'|'')(?:[^'\000-\010\013-\037]))*")
 def _p_value(s):
     pos = s.pos()
 
