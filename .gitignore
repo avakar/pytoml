@@ -4,3 +4,6 @@ pytoml.egg-info/
 venv/
 .idea/
 __pycache__/
+.tox/
+*.pyc
+.cache/
