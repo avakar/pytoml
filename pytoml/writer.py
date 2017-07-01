@@ -105,6 +105,7 @@ def dump(obj, fout, sort_keys=False):
 
         table_keys = sorted(table.keys()) if sort_keys else table.keys()
         new_tables = []
+        has_kv = False
         for k in table_keys:
             v = table[k]
             if isinstance(v, dict):
@@ -115,10 +116,12 @@ def dump(obj, fout, sort_keys=False):
                 # based on mojombo's comment: https://github.com/toml-lang/toml/issues/146#issuecomment-25019344
                 fout.write(
                     '#{} = null  # To use: uncomment and replace null with value\n'.format(_escape_id(k)))
+                has_kv = True
             else:
                 fout.write('{0} = {1}\n'.format(_escape_id(k), _format_value(v)))
+                has_kv = True
 
         tables.extend(reversed(new_tables))
 
-        if tables:
+        if (name or has_kv) and tables:
             fout.write('\n')
