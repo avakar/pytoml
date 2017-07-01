@@ -1,3 +1,4 @@
+[![PyPI](https://img.shields.io/pypi/v/pytoml.svg)](https://pypi.python.org/pypi/pytoml)
 [![Build Status](https://travis-ci.org/avakar/pytoml.svg?branch=master)](https://travis-ci.org/avakar/pytoml)
 
 # pytoml
