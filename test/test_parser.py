@@ -32,6 +32,6 @@ def test_object_pairs_hook():
     [x.c]
     """)
 
-    d = toml.load(source, object_pairs_hook=collections.OrderedDict)
-    assert list(d['x'].keys()) == sorted(d['x'].keys())
-    assert isinstance(d['x'], collections.OrderedDict)
+    d = toml.load(source, object_pairs_hook=collections.defaultdict)
+    assert isinstance(d, collections.defaultdict)
+    assert isinstance(d['x'], collections.defaultdict)
