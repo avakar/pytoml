@@ -3,13 +3,19 @@
 
 from setuptools import setup
 
+with open('README.md', 'r') as fin:
+    long_description = fin.read()
+
 setup(
     name='pytoml',
-    version='0.1.16',
+    version='0.1.17',
 
     description='A parser for TOML-0.4.0',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+
     author='Martin Vejnár',
-    author_email='avakar@ratatanek.cz',
+    author_email='vejnar.martin@gmail.com',
     url='https://github.com/avakar/pytoml',
     license='MIT',
     packages=['pytoml'],
