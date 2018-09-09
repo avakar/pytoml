@@ -4,7 +4,7 @@
 # pytoml
 
 This project aims at being a specs-conforming and strict parser and writer for [TOML][1] files.
-The library currently supports [version 0.4.0][2] of the specs and runs with Python 2.6+ and 3.4+.
+The library currently supports [version 0.4.0][2] of the specs and runs with Python 2.7+ and 3.4+.
 
 Install:
 

@@ -7,3 +7,5 @@ __pycache__/
 .tox/
 *.pyc
 .cache/
+.vscode/
+.pytest_cache/
