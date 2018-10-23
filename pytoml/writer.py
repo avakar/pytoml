@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 import io, datetime, math, sys
-from pathlib import PurePath
+
+if sys.version_info >= (3, 4):
+    from pathlib import PurePath
 
 if sys.version_info[0] == 3:
     long = int
@@ -88,10 +90,17 @@ def _format_value(v):
             return v.strftime('%Y-%m-%dT%H:%M:%S') + suffix
     elif isinstance(v, list):
         return _format_list(v)
-    elif isinstance(v, PurePath):
+    elif _isinstance_purepath(v):
         return '"{}"'.format(v)
     else:
         raise RuntimeError(v)
+
+
+def _isinstance_purepath(v):
+    if sys.version_info >= (3, 4) and isinstance(v, PurePath):
+        return True
+    else:
+        return False
 
 
 def dump(obj, fout, sort_keys=False):

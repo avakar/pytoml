@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-import pathlib
 
 import pytest
 
@@ -16,10 +15,13 @@ def test_attempting_to_write_non_number_floats_raises_error(value):
     assert str(error.value) == "{0} is not a valid TOML value".format(value)
 
 
-@pytest.mark.parametrize("value", [
-    pathlib.PurePath("test-path"),
-    pathlib.Path("test-path"),
-])
-def test_pathlib_path_objects_are_written_as_strings(value):
-    path_value = toml.dumps({"value": value})
+def test_pathlib_path_objects_are_written_as_strings():
+    pathlib = pytest.importorskip("pathlib")
+    path_value = toml.dumps({"value": pathlib.Path("test-path")})
+    assert path_value == 'value = "test-path"\n'
+
+
+def test_pathlib_purepath_objects_are_written_as_strings():
+    pathlib = pytest.importorskip("pathlib")
+    path_value = toml.dumps({"value": pathlib.PurePath("test-path")})
     assert path_value == 'value = "test-path"\n'
