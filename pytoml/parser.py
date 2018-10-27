@@ -180,13 +180,13 @@ _ws_re = re.compile(r'[ \t]*')
 def _p_ws(s):
     s.expect_re(_ws_re)
 
-_escapes = { 'b': '\b', 'n': '\n', 'r': '\r', 't': '\t', '"': '"', '\'': '\'',
-    '\\': '\\', '/': '/', 'f': '\f' }
+_escapes = { 'b': '\b', 'n': '\n', 'r': '\r', 't': '\t', '"': '"',
+    '\\': '\\', 'f': '\f' }
 
 _basicstr_re = re.compile(r'[^"\\\000-\037]*')
 _short_uni_re = re.compile(r'u([0-9a-fA-F]{4})')
 _long_uni_re = re.compile(r'U([0-9a-fA-F]{8})')
-_escapes_re = re.compile('[bnrt"\'\\\\/f]')
+_escapes_re = re.compile(r'[btnfr\"\\]')
 _newline_esc_re = re.compile('\n[ \t\n]*')
 def _p_basicstr_content(s, content=_basicstr_re):
     res = []
