@@ -197,7 +197,10 @@ def _p_basicstr_content(s, content=_basicstr_re):
         if s.consume_re(_newline_esc_re):
             pass
         elif s.consume_re(_short_uni_re) or s.consume_re(_long_uni_re):
-            res.append(_chr(int(s.last().group(1), 16)))
+            v = int(s.last().group(1), 16)
+            if 0xd800 <= v < 0xe000:
+                s.fail()
+            res.append(_chr(v))
         else:
             s.expect_re(_escapes_re)
             res.append(_escapes[s.last().group(0)])
