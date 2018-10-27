@@ -48,13 +48,6 @@ def _escape_id(s):
 def _format_list(v):
     return '[{0}]'.format(', '.join(_format_value(obj) for obj in v))
 
-# Formula from:
-#   https://docs.python.org/2/library/datetime.html#datetime.timedelta.total_seconds
-# Once support for py26 is dropped, this can be replaced by td.total_seconds()
-def _total_seconds(td):
-    return ((td.microseconds
-             + (td.seconds + td.days * 24 * 3600) * 10**6) / 10.0**6)
-
 def _format_value(v):
     if isinstance(v, bool):
         return 'true' if v else 'false'
@@ -69,7 +62,7 @@ def _format_value(v):
         return _escape_string(v)
     elif isinstance(v, datetime.datetime):
         offs = v.utcoffset()
-        offs = _total_seconds(offs) // 60 if offs is not None else 0
+        offs = int(offs.total_seconds()) // 60 if offs is not None else 0
 
         if offs == 0:
             suffix = 'Z'
@@ -79,7 +72,7 @@ def _format_value(v):
             else:
                 suffix = '-'
                 offs = -offs
-            suffix = '{0}{1:.02}{2:.02}'.format(suffix, offs // 60, offs % 60)
+            suffix = '{0}{1:02}:{2:02}'.format(suffix, offs // 60, offs % 60)
 
         if v.microsecond:
             return v.strftime('%Y-%m-%dT%H:%M:%S.%f') + suffix
