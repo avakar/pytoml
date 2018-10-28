@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 import io, datetime, math, sys
 
+from .utils import format_rfc3339
+
 if sys.version_info[0] == 3:
     long = int
     unicode = str
@@ -61,23 +63,7 @@ def _format_value(v):
     elif isinstance(v, unicode) or isinstance(v, bytes):
         return _escape_string(v)
     elif isinstance(v, datetime.datetime):
-        offs = v.utcoffset()
-        offs = int(offs.total_seconds()) // 60 if offs is not None else 0
-
-        if offs == 0:
-            suffix = 'Z'
-        else:
-            if offs > 0:
-                suffix = '+'
-            else:
-                suffix = '-'
-                offs = -offs
-            suffix = '{0}{1:02}:{2:02}'.format(suffix, offs // 60, offs % 60)
-
-        if v.microsecond:
-            return v.strftime('%Y-%m-%dT%H:%M:%S.%f') + suffix
-        else:
-            return v.strftime('%Y-%m-%dT%H:%M:%S') + suffix
+        return format_rfc3339(v)
     elif isinstance(v, list):
         return _format_list(v)
     else:
