@@ -1,41 +1,31 @@
 import os, json, sys, io, traceback, argparse
 import pytoml as toml
+from pytoml.utils import parse_rfc3339
 
-# Formula from:
-#   https://docs.python.org/2/library/datetime.html#datetime.timedelta.total_seconds
-# Once support for py26 is dropped, this can be replaced by td.total_seconds()
-def _total_seconds(td):
-    return ((td.microseconds
-             + (td.seconds + td.days * 24 * 3600) * 10**6) / 10.0**6)
+def is_bench_equal(a, b):
+    if isinstance(a, dict):
+        if 'type' in a:
+            if b.get('type') != a['type']:
+                return False
 
-def _testbench_literal(type, text, value):
-    if type == 'table':
-        return value
-    if type == 'array':
-        return { 'type': 'array', 'value': value }
-    if type == 'datetime':
-        offs = _total_seconds(value.tzinfo.utcoffset(value)) // 60
-        offs = 'Z' if offs == 0 else '{}{}:{}'.format('-' if offs < 0 else '-', abs(offs) // 60, abs(offs) % 60)
-        v = '{0:04}-{1:02}-{2:02}T{3:02}:{4:02}:{5:02}{6}'.format(value.year, value.month, value.day, value.hour, value.minute, value.second, offs)
-        return { 'type': 'datetime', 'value': v }
-    if type == 'bool':
-        return { 'type': 'bool', 'value': 'true' if value else 'false' }
-    if type == 'float':
-        return { 'type': 'float', 'value': value }
-    if type == 'str':
-        return { 'type': 'string', 'value': value }
-    if type == 'int':
-        return { 'type': 'integer', 'value': str(value) }
+            if a['type'] == 'float':
+                return float(a['value']) == float(b['value'])
+            if a['type'] == 'datetime':
+                x = parse_rfc3339(a['value'])
+                y = parse_rfc3339(b['value'])
+                return x == y
+            if a['type'] == 'array':
+                return is_bench_equal(a['value'], b['value'])
+            return a['value'] == b['value']
 
-def adjust_bench(v):
-    if isinstance(v, dict):
-        if v.get('type') == 'float':
-            v['value'] = float(v['value'])
-            return v
-        return dict([(k, adjust_bench(v[k])) for k in v])
-    if isinstance(v, list):
-        return [adjust_bench(v) for v in v]
-    return v
+        return (isinstance(b, dict) and len(a) == len(b)
+            and all(k in b and is_bench_equal(a[k], b[k]) for k in a))
+
+    if isinstance(a, list):
+        return (isinstance(b, list) and len(a) == len(b)
+            and all(is_bench_equal(x, y) for x, y in zip(a, b)))
+
+    raise RuntimeError('Invalid data in the bench JSON')
 
 def _main():
     ap = argparse.ArgumentParser()
@@ -78,7 +68,8 @@ def _main():
                         continue
 
                     with open(os.path.join(top, fname), 'rb') as fin:
-                        parsed = toml.load(fin, translate=_testbench_literal)
+                        parsed = toml.load(fin)
+                    parsed = toml.translate_to_test(parsed)
 
                 try:
                     with io.open(os.path.join(top, fname[:-5] + '.json'), 'rt', encoding='utf-8') as fin:
@@ -86,7 +77,7 @@ def _main():
                 except IOError:
                     bench = None
 
-                if parsed != adjust_bench(bench):
+                if parsed is None != bench is None or (parsed is not None and not is_bench_equal(parsed, bench)):
                     failed.append((fname, parsed, bench, parse_error))
                 else:
                     succeeded.append(fname)
