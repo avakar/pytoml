@@ -48,9 +48,6 @@ def _escape_id(s):
     return s
 
 
-def _format_list(v):
-    return '[{0}]'.format(', '.join(_format_value(obj) for obj in v))
-
 def _format_value(v):
     if isinstance(v, bool):
         return 'true' if v else 'false'
@@ -66,7 +63,9 @@ def _format_value(v):
     elif isinstance(v, datetime.datetime):
         return format_rfc3339(v)
     elif isinstance(v, list):
-        return _format_list(v)
+        return '[{0}]'.format(', '.join(_format_value(obj) for obj in v))
+    elif isinstance(v, dict):
+        return '{{{0}}}'.format(', '.join('{} = {}'.format(_escape_id(k), _format_value(obj)) for k, obj in v.items()))
     else:
         raise RuntimeError(v)
 
