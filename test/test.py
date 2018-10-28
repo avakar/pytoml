@@ -77,7 +77,7 @@ def _main():
                 except IOError:
                     bench = None
 
-                if parsed is None != bench is None or (parsed is not None and not is_bench_equal(parsed, bench)):
+                if (parsed is None) != (bench is None) or (parsed is not None and not is_bench_equal(parsed, bench)):
                     failed.append((fname, parsed, bench, parse_error))
                 else:
                     succeeded.append(fname)
