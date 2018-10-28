@@ -94,4 +94,6 @@ def _main():
     return 1 if failed or not succeeded else 0
 
 if __name__ == '__main__':
-    sys.exit(_main())
+    r = _main()
+    if r:
+        sys.exit(r)
