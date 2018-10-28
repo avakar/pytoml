@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-import io, datetime, math, sys
+import io, datetime, math, string, sys
 
 from .utils import format_rfc3339
 
@@ -41,8 +41,9 @@ def _escape_string(s):
     return '"' + ''.join(res) + '"'
 
 
+_key_chars = string.digits + string.ascii_letters + '-_'
 def _escape_id(s):
-    if any(not c.isalnum() and c not in '-_' for c in s):
+    if any(c not in _key_chars for c in s):
         return _escape_string(s)
     return s
 
