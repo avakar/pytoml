@@ -91,7 +91,7 @@ def _format_value(v):
     elif isinstance(v, list):
         return _format_list(v)
     elif _isinstance_purepath(v):
-        return '"{}"'.format(v)
+        return _escape_string(str(v))
     else:
         raise RuntimeError(v)
 
