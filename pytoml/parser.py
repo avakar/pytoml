@@ -1,4 +1,4 @@
-import string, re, sys, datetime
+import re, sys
 from .core import TomlError
 from .utils import rfc3339_re, parse_rfc3339_re
 
