@@ -1,6 +1,11 @@
 [![PyPI](https://img.shields.io/pypi/v/pytoml.svg)](https://pypi.python.org/pypi/pytoml)
 [![Build Status](https://travis-ci.org/avakar/pytoml.svg?branch=master)](https://travis-ci.org/avakar/pytoml)
 
+# Deprecated
+
+The pytoml project is no longer being actively maintained. Consider using the
+[toml](https://github.com/uiri/toml) package instead.
+
 # pytoml
 
 This project aims at being a specs-conforming and strict parser and writer for [TOML][1] files.
