@@ -8,7 +8,7 @@ with open('README.md', 'r') as fin:
 
 setup(
     name='pytoml',
-    version='0.1.20',
+    version='0.1.21',
 
     description='A parser for TOML-0.4.0',
     long_description=long_description,
